@@ -1,0 +1,13 @@
+{
+  "itemGroup.camkey": "Example Mod Tab",
+  "block.camkey.example_block": "Example Block",
+  "item.camkey.example_item": "Example Item",
+
+  "camkey.configuration.title": "Camera Keyframes Configs",
+  "camkey.configuration.section.camkey.common.toml": "Camera Keyframes Configs",
+  "camkey.configuration.section.camkey.common.toml.title": "Camera Keyframes Configs",
+  "camkey.configuration.items": "Item List",
+  "camkey.configuration.logDirtBlock": "Log Dirt Block",
+  "camkey.configuration.magicNumberIntroduction": "Magic Number Text",
+  "camkey.configuration.magicNumber": "Magic Number"
+}
