@@ -1,9 +1,12 @@
 package com.irinberry.camkey;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+
+import java.util.List;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -25,6 +28,10 @@ public final class CamKeyCommands {
                         .then(Commands.literal("add")
                                 .then(Commands.argument("sequenceName", StringArgumentType.word())
                                         .executes(CamKeyCommands::add)))
+                        .then(Commands.literal("play")
+                                .then(Commands.argument("sequenceName", StringArgumentType.word())
+                                        .then(Commands.argument("durationSeconds", DoubleArgumentType.doubleArg(0.05))
+                                                .executes(CamKeyCommands::play))))
         );
     }
 
@@ -53,5 +60,44 @@ public final class CamKeyCommands {
                 true
         );
         return count;
+    }
+
+    private static int play(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        String sequenceName = StringArgumentType.getString(context, "sequenceName");
+        double durationSeconds = DoubleArgumentType.getDouble(context, "durationSeconds");
+        CameraSequenceSavedData data = CameraSequenceSavedData.get(player.server);
+        CameraSequence sequence = data.getSequence(sequenceName).orElse(null);
+
+        if (sequence == null) {
+            source.sendFailure(Component.literal("Unknown sequence '" + sequenceName + "'"));
+            return 0;
+        }
+        if (sequence.size() < 2) {
+            source.sendFailure(Component.literal(
+                    "Sequence '" + sequenceName + "' needs at least 2 keyframes (has " + sequence.size() + ")"
+            ));
+            return 0;
+        }
+
+        ResourceLocation playerDimension = CameraCapture.dimensionOf(player);
+        if (sequence.dimension() == null || !sequence.dimension().equals(playerDimension)) {
+            source.sendFailure(Component.literal(
+                    "Sequence '" + sequenceName + "' belongs to " + sequence.dimension()
+                            + " (you are in " + playerDimension + ")"
+            ));
+            return 0;
+        }
+
+        if (!CameraPlaybackStarter.startLocal(sequenceName, List.copyOf(sequence.keyframes()), durationSeconds)) {
+            source.sendFailure(Component.literal("Playback is only available in local single-player."));
+            return 0;
+        }
+        source.sendSuccess(
+                () -> Component.literal("Playing '" + sequenceName + "' over " + durationSeconds + " seconds"),
+                true
+        );
+        return 1;
     }
 }
