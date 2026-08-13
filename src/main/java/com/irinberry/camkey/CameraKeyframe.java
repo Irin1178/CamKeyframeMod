@@ -14,19 +14,18 @@ public record CameraKeyframe(double x, double y, double z, float yaw, float pitc
     private static final String TAG_PITCH = "pitch";
 
     /**
-     * Linearly interpolates position and takes the shortest rotation path.
-     *
-     * @param other the pose at t = 1
-     * @param t     blend factor; values outside 0..1 are clamped
+     * Interpolates position and shortest-path rotation. {@code t} is clamped to 0..1
+     * then eased with smoothstep so each segment eases in and out.
      */
     public CameraKeyframe interpolate(CameraKeyframe other, float t) {
         float clamped = Mth.clamp(t, 0.0F, 1.0F);
+        float eased = clamped * clamped * (3.0F - 2.0F * clamped);
         return new CameraKeyframe(
-                Mth.lerp(clamped, this.x, other.x),
-                Mth.lerp(clamped, this.y, other.y),
-                Mth.lerp(clamped, this.z, other.z),
-                Mth.rotLerp(clamped, this.yaw, other.yaw),
-                Mth.rotLerp(clamped, this.pitch, other.pitch)
+                Mth.lerp(eased, this.x, other.x),
+                Mth.lerp(eased, this.y, other.y),
+                Mth.lerp(eased, this.z, other.z),
+                Mth.rotLerp(eased, this.yaw, other.yaw),
+                Mth.rotLerp(eased, this.pitch, other.pitch)
         );
     }
 
